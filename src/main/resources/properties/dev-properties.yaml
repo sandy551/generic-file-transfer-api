@@ -1,0 +1,51 @@
+#http request config
+http:
+    request:
+        protocal: "HTTP"
+        host: "0.0.0.0"
+        port: "8082"
+        basepath: "/api"
+        "true":
+            path: "/transfer-with-visibility"
+        "false":
+            path: "/transfer-with-out-visibility"
+        idealtimeout: "30000"
+        timeout: "30000"
+        frequency: "2000"
+        attempts: "2"
+        
+#as2 partner config
+partner-as2:
+    request:
+        timeout: "30000"
+        idealtimeout: "30000"
+        partner:
+            name: "PROWESS"
+            alias: "prowess"
+            email: "Sandeep.Kancharla@prowesssoft.com"
+            url: "http://localhost:8082/receive/file"
+        self:
+            name: "MULETRAINS"
+            alias: "muletrains"
+            email: "Sandeep.Kancharla@prowesssoft.com"
+            keystore-password: "changeit"
+            path: "cert/partner_keystore.jks"
+            privatekey-password: "changeit"
+
+#as2 self config
+as2:
+    request:
+        timeout: "30000"
+        idealtimeout: "30000"
+        partner:
+            name: "MULETRAINS"
+            alias: "muletrains"
+            email: "Sandeep.Kancharla@prowesssoft.com"
+            url: "http://localhost:8082/receive/file"
+        self:
+            name: "PROWESS"
+            alias: "prowess"
+            email: "Sandeep.Kancharla@prowesssoft.com"
+            keystore-password: "changeit"
+            path: "cert/self_keystore.jks"
+            privatekey-password: "changeit"

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+>
+	<sub-flow
+		name="common-error-log"
+		doc:id="3b2f3087-6fd9-439e-92b0-f703c378c323"
+	>
+		<logger
+			level="ERROR"
+			doc:name="Logger"
+			doc:id="204e6477-c36c-4fc7-a074-aab9a5fbd9ca"
+			message="#[%dw 2.0&#10;import * from dw::util::Timer&#10;output application/json&#10;---&#10;if ( payload.logPayload ~= true ) &#10;	payload&#10;else&#10;{&#10;    &quot;sync&quot;: false,&#10;    &quot;logPayload&quot;: false,&#10;    &quot;correlationId&quot;: (vars.correlationId default correlationId) as String,&#10;    &quot;message-type&quot;: &quot;log&quot;,&#10;    &quot;trace-point&quot;: &quot;ERROR&quot;,&#10;    &quot;method&quot;: attributes.method,&#10;    &quot;errorType&quot;: error.errorType,&#10;    &quot;parentErrorType&quot;: error.errorType.parentErrorType,&#10;    &quot;childErrors&quot;: error.childErrors,&#10;    &quot;description&quot;: error.description,&#10;    &quot;detailedDescription&quot;: error.detailedDescription,&#10;    &quot;failingComponent&quot;: error.failingComponent,&#10;    &quot;errorMessage&quot;: error.errorMessage,&#10;    &quot;mule-timestamp&quot;: now(),&#10;    &quot;mule-currentTimestamp&quot;: currentMilliseconds(),&#10;    &quot;application-name&quot;: app.name,&#10;    &quot;env&quot;: p('env') default &quot;local&quot;&#10;}]" />
+	</sub-flow>
+	<sub-flow
+		name="common-before-log"
+		doc:id="11991bc6-afba-4d1f-bcb2-c844350f0207"
+	>
+		<logger
+			level="INFO"
+			doc:name="Logger"
+			doc:id="668d83a7-9201-4611-8c20-af035dc8d636"
+			message="#[%dw 2.0&#10;import * from dw::util::Timer&#10;output application/json&#10;---&#10;{&#10;    &quot;sync&quot;: false,&#10;    &quot;logPayload&quot;: false,&#10;    &quot;correlationId&quot;: (vars.correlationId default correlationId) as String,&#10;    &quot;message-type&quot;: &quot;log&quot;,&#10;    &quot;message&quot;: &quot;before $(vars.operation default &quot;&quot;)&quot;,&#10;    &quot;trace-point&quot;: &quot;INFO&quot;,&#10;    &quot;method&quot;: attributes.method,&#10;    &quot;errorType&quot;: null,&#10;    &quot;parentErrorType&quot;: null,&#10;    &quot;childErrors&quot;: null,&#10;    &quot;description&quot;: null,&#10;    &quot;detailedDescription&quot;: null,&#10;    &quot;failingComponent&quot;: null,&#10;    &quot;errorMessage&quot;: null,&#10;    &quot;mule-timestamp&quot;: now() &gt;&gt; &quot;UTC&quot;,&#10;    &quot;mule-currentTimestamp&quot;: currentMilliseconds(),&#10;    &quot;application-name&quot;: app.name,&#10;    &quot;env&quot;: p('env') default &quot;local&quot;&#10;}]" />
+	</sub-flow>
+	<sub-flow
+		name="common-common-log"
+		doc:id="dc5eb041-ad20-4678-a68a-db2bfdadc21d"
+	>
+		<logger
+			level="INFO"
+			doc:name="Logger"
+			doc:id="e97de5fd-17ca-4780-a549-a01ca6233ef8"
+			message="#[%dw 2.0&#10;import * from dw::util::Timer&#10;output application/json&#10;---&#10;{&#10;    &quot;sync&quot;: false,&#10;    &quot;logPayload&quot;: false,&#10;    &quot;correlationId&quot;: (vars.correlationId default correlationId) as String,&#10;    &quot;message-type&quot;: &quot;log&quot;,&#10;    &quot;message&quot;: vars.operation,&#10;    &quot;trace-point&quot;: &quot;INFO&quot;,&#10;    &quot;method&quot;: attributes.method,&#10;    &quot;errorType&quot;: null,&#10;    &quot;parentErrorType&quot;: null,&#10;    &quot;childErrors&quot;: null,&#10;    &quot;description&quot;: null,&#10;    &quot;detailedDescription&quot;: null,&#10;    &quot;failingComponent&quot;: null,&#10;    &quot;errorMessage&quot;: null,&#10;    &quot;mule-timestamp&quot;: now() &gt;&gt; &quot;UTC&quot;,&#10;    &quot;mule-currentTimestamp&quot;: currentMilliseconds(),&#10;    &quot;application-name&quot;: app.name,&#10;    &quot;env&quot;: p('env') default &quot;local&quot;&#10;}]" />
+	</sub-flow>
+	<sub-flow
+		name="common-after-log"
+		doc:id="774710a6-51a6-49bc-a1d4-c7efaf23b0c4"
+	>
+		<logger
+			level="INFO"
+			doc:name="Logger"
+			doc:id="f1946731-9805-4679-9b7b-ba5618f39d5e"
+			message="#[%dw 2.0&#10;import * from dw::util::Timer&#10;output application/json&#10;---&#10;{&#10;    &quot;sync&quot;: false,&#10;    &quot;logPayload&quot;: false,&#10;    &quot;correlationId&quot;: (vars.correlationId default correlationId) as String,&#10;    &quot;message-type&quot;: &quot;log&quot;,&#10;    &quot;message&quot;: &quot;after $(vars.operation default &quot;&quot;)&quot;,&#10;    &quot;trace-point&quot;: &quot;INFO&quot;,&#10;    &quot;method&quot;: attributes.method,&#10;    &quot;errorType&quot;: null,&#10;    &quot;parentErrorType&quot;: null,&#10;    &quot;childErrors&quot;: null,&#10;    &quot;description&quot;: null,&#10;    &quot;detailedDescription&quot;: null,&#10;    &quot;failingComponent&quot;: null,&#10;    &quot;errorMessage&quot;: null,&#10;    &quot;mule-timestamp&quot;: now() &gt;&gt; &quot;UTC&quot;,&#10;    &quot;mule-currentTimestamp&quot;: currentMilliseconds(),&#10;    &quot;application-name&quot;: app.name,&#10;    &quot;env&quot;: p('env') default &quot;local&quot;&#10;}]" />
+	</sub-flow>
+	<sub-flow
+		name="common-inbound-properties"
+		doc:id="eee46da6-f9ae-4d84-816a-9e3a6a4c25d6"
+	>
+		<ee:transform
+			doc:name=":inboundDetails &amp; correlationId"
+			doc:id="02f899b3-8198-452c-b8d8-6156db9a9789"
+		>
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="inboundDetails"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    correlationId: correlationId,
+    transactionId: uuid(),
+    timeStamp: now() >> "UTC",
+    headers: attributes.headers,
+    queryParams: attributes.queryParams
+}]]></ee:set-variable>
+				<ee:set-variable variableName="correlationId"><![CDATA[%dw 2.0
+output application/java
+---
+correlationId default uuid()]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger
+			level="INFO"
+			doc:name="inboundDetails Logger"
+			doc:id="2c69e3f1-f625-4ae6-9c0a-1f24a00d55c1"
+			message="inboundDetails : #[vars.inboundDetails]" />
+	</sub-flow>
+	<sub-flow
+		name="generic-file-transfer-read-file"
+		doc:id="b48c19e2-b16d-4609-8db9-3d7604acc6e7"
+	>
+		<set-variable
+			value="FTP"
+			doc:name="operation"
+			doc:id="8ec34037-d0e2-4c5b-b654-dd2787f9fe33"
+			variableName="operation" />
+		<flow-ref
+			doc:name="common-before-log"
+			doc:id="6fdbd714-9b7c-44d4-aa9f-05c56c6b31fd"
+			name="common-before-log" />
+		<file:read
+			doc:name="Read"
+			doc:id="f6b7c462-fe7c-4b2f-a99b-7d739b068b47"
+			config-ref="File_Config"
+			path="#[vars.inboundDetails.queryParams.fileName]" />
+		<flow-ref
+			doc:name="common-after-log"
+			doc:id="5a3103c0-6eac-480a-9ed4-f6b4b8c5cea4"
+			name="common-after-log" />
+	</sub-flow>
+</mule>

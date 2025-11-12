@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+>
+	
+	<flow
+		name="generic-file-transfer-apiFlow"
+		doc:id="7dbf5b35-2125-4abc-945c-6a6645bbc7bd"
+	>
+		<http:listener
+			doc:name="Listener"
+			doc:id="6dc567eb-c2ec-4c37-84d1-7b87dff8ea53"
+			config-ref="HTTP_Listener_config"
+			path="${http.path}"
+		>
+			<http:response
+				statusCode="#[vars.httpStatusCode default 200]"
+			>
+				<http:headers><![CDATA[#[vars.responseHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response
+				statusCode="#[vars.httpStatusCode default 500]" />
+		</http:listener>
+		<flow-ref
+			doc:name="inbound properties"
+			doc:id="57595b34-73b1-4dcc-b193-a2e67253b1a1"
+			name="common-inbound-properties" />
+		<set-variable
+			value="Start Log"
+			doc:name="operation - start log"
+			doc:id="eff37971-4b21-4107-ae23-9a644157abce"
+			variableName="operation" />
+		<flow-ref
+			doc:name="Start Log"
+			doc:id="f2b0ed70-daaa-4840-93d2-dd511b69dbf2"
+			name="common-common-log" />
+		<flow-ref doc:name="generic-file-transfer-api-imp" doc:id="400501f0-7559-42c2-8c39-e380f27198b8" name="generic-file-transfer-api-imp"/>
+		<set-variable value="End Log" doc:name="operation - end log" doc:id="ad9354bb-ef03-453c-addd-ea67c536340c" variableName="operation" />
+		<flow-ref doc:name="End Log" doc:id="bf695f00-6196-4156-a471-cb29fd7291f0" name="common-common-log" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="601c1b57-bc14-48d8-9d14-7de5e1e22257" >
+				<ee:transform doc:name="errorPayload &amp; :httpStatusCode" doc:id="04b8788f-5ec9-41c4-983c-588b4b1262cd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::util::Timer
+output application/json
+---
+{
+    "sync": false,
+    "logPayload": true,
+    "correlationId": (vars.correlationId default correlationId) as String,
+    "message-type": "log",
+    "trace-point": "ERROR",
+    "method": attributes.method,
+    "errorType": error.errorType,
+    "parentErrorType": error.errorType.parentErrorType,
+    "childErrors": error.childErrors,
+    "description": error.description,
+    "detailedDescription": error.detailedDescription,
+    "failingComponent": error.failingComponent,
+    "errorMessage": error.errorMessage,
+    "mule-timestamp": now(),
+    "mule-currentTimestamp": currentMilliseconds(),
+    "application-name": app.name,
+    "env": p('env') default "local"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatusCode" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="common-error-log" doc:id="53886a59-bb46-433c-a4a0-41d682d7201d" name="common-error-log"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="generic-file-transfer-api-imp" doc:id="a35b7b62-ed59-4cfe-9c49-c06d85a2f5cf" >
+		<flow-ref doc:name="generic-file-transfer-read-file" doc:id="c243da10-8910-4746-8d44-5f6c29886339" name="generic-file-transfer-read-file"/>
+		<flow-ref doc:name="generic-file-transfer-request" doc:id="eaa51e35-4944-42ec-b4c3-7d871fb6618a" name="generic-file-transfer-request" />
+	</sub-flow>
+	<sub-flow name="generic-file-transfer-request" doc:id="9ca97b01-2f5f-4f35-9c6e-ea8f152f3424" >
+		<set-variable value="request" doc:name="operation" doc:id="e05d2b0c-d11a-49ad-89ba-20e429bae24f" variableName="operation"/>
+		<flow-ref doc:name="common-before-log" doc:id="198ef298-91cb-4391-9447-0bc325ff3d12" name="common-before-log"/>
+		<ee:transform doc:name="requestHeaders" doc:id="48eb23d6-8a72-4acb-b31c-e12085757dbe" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="requestHeaders" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes default {}) ++ {
+    "Content-Type": payload.^mediaType
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="db0408d7-212e-4c97-a437-2e6a03e0f0ba" config-ref="HTTP_Request_configuration_Request" path="#[p('http.request.$(vars.inboundDetails.queryParams.visibility default 'false').path')]" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]">
+			<http:headers ><![CDATA[#[vars.requestHeaders default {}]]]></http:headers>
+		</http:request>
+		<flow-ref doc:name="common-after-log" doc:id="234f5dff-762c-4d38-b6b1-14a5a2d3f2c9" name="common-after-log"/>
+		<ee:transform doc:name=":httpStatusCode, payload &amp; :responseHeaders" doc:id="f44cd10a-8652-4d7e-a27c-02d98d7fade2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="responseHeaders" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers]]></ee:set-variable>
+				<ee:set-variable variableName="httpStatusCode" ><![CDATA[200]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<flow name="generic-file-transfer-receiver-with-content" doc:id="33b1e86d-c377-4c1d-92d9-17cf6aec630c" >
+		<http:listener doc:name="Listener" doc:id="22e2a269-9bfb-4cb6-8711-29102bcc6184" config-ref="HTTP_Listener_config_receive_file" path="/api/transfer-with-visibility">
+			<http:response statusCode="#[vars.httpStatusCode default 200]">
+				<http:headers ><![CDATA[#[vars.responseHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.httpStatusCode default 500]">
+				<http:headers ><![CDATA[#[vars.responseHeaders default {}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<ee:transform doc:name="fileName &amp; fileType" doc:id="6301e1ba-4e2f-46c1-a422-9f684a776a83" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="fileName" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.filename]]></ee:set-variable>
+				<ee:set-variable variableName="fileType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.'content-type' default payload.^mediaType]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="d06d9a54-07cb-4e40-858f-6ff3541238d2" config-ref="File_Config" path='#["target/$(vars.fileName)"]'/>
+		<ee:transform doc:name=":httpStatusCode, payload &amp; :responseHeaders" doc:id="df7f522e-0519-4ad0-bbbc-13f514331f43" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="responseHeaders" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "Content-Type": vars.fileType default 'application/octet-stream',
+    "Content-Disposition": "attachment; filename=$(vars.fileName default 'unknown')"
+}]]></ee:set-variable>
+				<ee:set-variable variableName="httpStatusCode" ><![CDATA[201]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+	<flow name="generic-file-transfer-receiver-with-out-content" doc:id="accc082f-0c05-484b-93d0-740e84870205" >
+		<http:listener doc:name="Listener" doc:id="5a65e7b3-de5a-427b-85d4-9c5c56dbeeb3" config-ref="HTTP_Listener_config_receive_file" path="/api/transfer-with-out-visibility" >
+			<http:response statusCode="#[vars.httpStatusCode default 200]" >
+				<http:headers ><![CDATA[#[vars.responseHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.httpStatusCode default 500]" >
+				<http:headers ><![CDATA[#[vars.responseHeaders default {}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<ee:transform doc:name="fileName &amp; fileType" doc:id="6de5fe1b-3516-4c2b-aaef-3a9ff47b710f">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="fileName"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.filename]]></ee:set-variable>
+				<ee:set-variable variableName="fileType"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.'content-type' default payload.^mediaType]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="67b98698-b282-4793-969f-f07c0b4912b7" config-ref="File_Config" path='#["target/$(vars.fileName)"]' />
+		<ee:transform doc:name=":httpStatusCode, payload &amp; :responseHeaders" doc:id="8935fa05-8b25-4b88-ade0-8fc8d6703313" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    statusCode: 201,
+    message: "success",
+    fileName: vars.fileName,
+    transactionId: correlationId default uuid()
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="responseHeaders" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "Content-Type": "application/josn"
+}]]></ee:set-variable>
+				<ee:set-variable variableName="httpStatusCode" ><![CDATA[201]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+</mule>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:as2-mule4="http://www.mulesoft.org/schema/mule/as2-mule4"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/as2-mule4 http://www.mulesoft.org/schema/mule/as2-mule4/current/mule-as2-mule4.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd"
+>
+	
+	<flow name="generic-file-transfer-as2-trigger" doc:id="486fc813-d076-4e6c-b8a8-0f7cc320e6c4" >
+		<http:listener doc:name="Listener" doc:id="19993b76-57dd-4d4a-a986-127bda3bfd8d" config-ref="HTTP_Listener_config" path="${http.as2path}"/>
+		<flow-ref doc:name="inbound properties" doc:id="749d6fb2-6c5d-481b-8811-092a229049a2" name="common-inbound-properties" />
+		<set-variable value="Start Log" doc:name="operation - start log" doc:id="32439910-dc2e-44b2-b4fd-f192eb102e24" variableName="operation" />
+		<flow-ref doc:name="Start Log" doc:id="27457759-9e04-4aaf-a347-6167f833ed65" name="common-common-log" />
+		<set-variable value="#[attributes.queryParams.visibility]" doc:name=":visibility" doc:id="1ecc6bb3-bbb0-49a1-bbc7-9a9f6dc89834" variableName="visibility"/>
+		<flow-ref doc:name="generic-file-transfer-as2-imp" doc:id="3681ba2d-117d-4789-9bcb-689aca276cfc" name="generic-file-transfer-as2-imp"/>
+		<set-variable value="End Log" doc:name="operation - end log" doc:id="31929912-bdad-467f-8d0b-dbdb5d6c1e26" variableName="operation" />
+		<flow-ref doc:name="End Log" doc:id="d6c02b32-3128-47dd-b197-5a036dc79dd7" name="common-common-log" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5044ace3-00e8-452b-ba47-949bf23c3a04" >
+				<ee:transform doc:name="errorPayload &amp; :httpStatusCode" doc:id="64a311c6-d5ba-4cf1-b4e0-8edc3086b1e0" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::util::Timer
+output application/json
+---
+{
+    "sync": false,
+    "logPayload": true,
+    "correlationId": (vars.correlationId default correlationId) as String,
+    "message-type": "log",
+    "trace-point": "ERROR",
+    "method": attributes.method,
+    "errorType": error.errorType,
+    "parentErrorType": error.errorType.parentErrorType,
+    "childErrors": error.childErrors,
+    "description": error.description,
+    "detailedDescription": error.detailedDescription,
+    "failingComponent": error.failingComponent,
+    "errorMessage": error.errorMessage,
+    "mule-timestamp": now(),
+    "mule-currentTimestamp": currentMilliseconds(),
+    "application-name": app.name,
+    "env": p('env') default "local"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatusCode" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="common-error-log" doc:id="27be29b2-dfe8-4dac-90b6-4a827b9e326a" name="common-error-log" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="generic-file-transfer-as2-imp" doc:id="8790d4de-2ba2-4721-896e-1c76178dda22" >
+		<flow-ref doc:name="generic-file-transfer-read-file" doc:id="e48c6edf-50a5-468c-aee1-d430e574196a" name="generic-file-transfer-read-file" />
+		<flow-ref doc:name="generic-file-transfer-as2-send-with-sync" doc:id="f27301f4-006d-43c0-b18a-4d62dda47c79" name="#[&quot;generic-file-transfer-as2-send-with-sync-with-$((vars.visibility default 'false') as String)-content&quot;]"/>
+	</sub-flow>
+	<sub-flow name="generic-file-transfer-as2-send-with-sync-with-true-content" doc:id="978978c1-86e2-4d0f-b315-df05de42e6fe" >
+		<set-variable value="AS2" doc:name="operation - log" doc:id="a4c1d8e1-8937-494b-b56c-f73e3b3457ce" variableName="operation" />
+		<flow-ref doc:name="common-before-log" doc:id="2ce0d949-a6ec-4712-8ea7-133fed26a1a2" name="common-before-log" />
+		<as2-mule4:send-with-sync-mdn doc:name="Send with Sync MDN :as2Response" doc:id="44f204bd-c95a-4017-880b-f69709074e46" config-ref="AS2_Connector_Send_config_partner" fileName="#[attributes.fileName]" mimeType="#[payload.^mediaType]" target="as2Response"/>
+		<flow-ref doc:name="common-after-log" doc:id="357ab253-30fb-4782-9263-f3e7bb9577a2" name="common-after-log" />
+		<ee:transform doc:name=":httpStatusCode, payload &amp; :responseHeaders" doc:id="2a9466ef-689f-428a-9c71-05c3e6624e2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="responseHeaders" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "Content-Type": payload.^mediaType default 'application/octet-stream',
+    "Content-Disposition": "attachment; filename=$(attributes.fileName default 'unknown')",
+    "as2Response": write(vars.as2Response)
+}]]></ee:set-variable>
+				<ee:set-variable variableName="httpStatusCode" ><![CDATA[201]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="generic-file-transfer-as2-send-with-sync-with-false-content" doc:id="3e3fd457-3f0a-42db-8f67-6faa7e7efd99">
+		<set-variable value="AS2" doc:name="operation - log" doc:id="5dc95611-540b-414b-ba15-936b5a24cdca" variableName="operation" />
+		<flow-ref doc:name="common-before-log" doc:id="484229fc-d7c9-4366-92ac-89a03d382f14" name="common-before-log" />
+		<as2-mule4:send-with-sync-mdn doc:name="Send with Sync MDN :as2Response" doc:id="8dfa4786-28c2-491f-9f97-cabe13a561f3" config-ref="AS2_Connector_Send_config_partner" mimeType="#[payload.^mediaType]" fileName="#[attributes.fileName]" target="as2Response" />
+		<flow-ref doc:name="common-after-log" doc:id="bd8174a0-186a-4b87-b9c3-2f55494afc99" name="common-after-log" />
+		<ee:transform doc:name=":httpStatusCode, payload &amp; :responseHeaders" doc:id="afe9047e-a154-410d-ac9f-2dfabefcf5d4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    statusCode: 201,
+    message: "success",
+    fileName: attributes.fileName,
+    transactionId: correlationId default uuid(),
+    "as2Response": write(vars.as2Response)
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="responseHeaders"><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "Content-Type": "application/json"
+}]]></ee:set-variable>
+				<ee:set-variable variableName="httpStatusCode"><![CDATA[201]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<flow name="generic-file-transfer-as2-listner" doc:id="18101074-6312-49b6-a42d-6253dad4e058" >
+		<as2-mule4:as2-listener doc:name="As 2 listener" doc:id="3f05c300-aa67-464d-b623-c417505450ce" config-ref="AS2_Connector_Listener_config_self" path="/receive/file"/>
+		<flow-ref doc:name="inbound properties" doc:id="3df4a818-29bc-4a7f-8d98-898da910da6d" name="common-inbound-properties" />
+		<set-variable value="Start Log" doc:name="operation - start log" doc:id="a0bc0a11-6c55-4108-905a-52b947dc2046" variableName="operation" />
+		<flow-ref doc:name="Start Log" doc:id="cb85980f-50b9-42a4-9a18-92495911f0a7" name="common-common-log" />
+		<flow-ref doc:name="generic-file-transfer-as2-file-write" doc:id="2ca25a89-4085-40d7-8f28-c6f6a31db336" name="generic-file-transfer-as2-file-write"/>
+		<set-variable value="End Log" doc:name="operation - end log" doc:id="11b2ca57-2aa8-4770-a5a5-84baf32d2cf4" variableName="operation" />
+		<flow-ref doc:name="End Log" doc:id="2fd23651-fa1f-44d9-947c-502718a5f4ac" name="common-common-log" />
+	</flow>
+	<sub-flow name="generic-file-transfer-as2-file-write" doc:id="f8a8fc04-210a-42db-975a-ac041e1a815c" >
+		<set-variable value="file write" doc:name="operation - log" doc:id="d933fc71-ee79-4f27-9002-d83ffd71b2c7" variableName="operation" />
+		<ee:transform doc:name="fileName &amp; fileType" doc:id="5b0a27bb-80bf-4652-8f32-6c61cb8dcbf6" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="fileName" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.fileName]]></ee:set-variable>
+				<ee:set-variable variableName="fileType" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.mimeType]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="common-before-log" doc:id="37e88714-4774-418d-8135-ebad00ec98fd" name="common-before-log" />
+		<file:write doc:name="Write" doc:id="ff7515ec-e189-4f93-8782-d7e0a27e524c" config-ref="File_Config" path='#["target/as2/$(vars.fileName)"]' />
+		<flow-ref doc:name="common-after-log" doc:id="77348800-ab32-4be3-8b58-428e76d68c56" name="common-after-log" />
+	</sub-flow>
+</mule>

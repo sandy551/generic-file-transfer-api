@@ -1,0 +1,148 @@
+{
+	"info": {
+		"_postman_id": "addc1328-bd75-41b2-8041-709709530cfb",
+		"name": "Doc processing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6297657"
+	},
+	"item": [
+		{
+			"name": "API",
+			"item": [
+				{
+					"name": "http with visibility",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/trigger?fileName=image.png&visibility=true",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"trigger"
+							],
+							"query": [
+								{
+									"key": "fileName",
+									"value": "image.png"
+								},
+								{
+									"key": "visibility",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http with out visibility",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/trigger?fileName=sample3.doc&visibility=false",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"trigger"
+							],
+							"query": [
+								{
+									"key": "fileName",
+									"value": "sample3.doc"
+								},
+								{
+									"key": "visibility",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AS2",
+			"item": [
+				{
+					"name": "http with visibility",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/as2-trigger?fileName=sample-4.pdf&visibility=true",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"as2-trigger"
+							],
+							"query": [
+								{
+									"key": "fileName",
+									"value": "sample-4.pdf"
+								},
+								{
+									"key": "visibility",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http with out visibility",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/as2-trigger?fileName=sample-4.pdf&visibility=false",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"as2-trigger"
+							],
+							"query": [
+								{
+									"key": "fileName",
+									"value": "sample-4.pdf"
+								},
+								{
+									"key": "visibility",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:as2-mule4="http://www.mulesoft.org/schema/mule/as2-mule4"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd 
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/as2-mule4 http://www.mulesoft.org/schema/mule/as2-mule4/current/mule-as2-mule4.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd"
+>
+	<http:listener-config
+		name="HTTP_Listener_config"
+		doc:name="HTTP Listener config"
+		doc:id="1d7a901a-810d-4fbe-ad02-cae426f8fced"
+	>
+		<http:listener-connection
+			host="${http.host}"
+			port="${http.port}"
+			readTimeout="${http.readtimeout}"
+			connectionIdleTimeout="${http.timeout}"
+		>
+			<reconnection>
+				<reconnect
+					frequency="${http.frequency}"
+					count="${http.attempts}" />
+			</reconnection>
+		</http:listener-connection>
+	</http:listener-config>
+	<http:request-config
+		name="HTTP_Request_configuration_Request"
+		doc:name="HTTP Request configuration"
+		doc:id="adea87fd-f831-418f-8e53-058ceac0176e"
+		basePath="${http.request.basepath}"
+		sendCorrelationId="ALWAYS"
+	>
+		<http:request-connection
+			protocol="${http.request.protocal}"
+			host="${http.request.host}"
+			port="${http.request.port}"
+			connectionIdleTimeout="${http.request.idealtimeout}"
+		>
+			<reconnection>
+				<reconnect
+					frequency="${http.request.frequency}"
+					count="${http.request.attempts}"
+					blocking="false" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="e8a31d89-4f92-41d3-9767-efd39770a0bb"
+		doc:description="common properties"
+		file="properties/common-properties.yaml" />
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="50a304a9-758d-4958-b6e3-e602c0455a2b"
+		file="properties/${env}-properties.yaml" />
+	<as2-mule4:send-config name="AS2_Connector_Send_config_partner"
+                       doc:name="AS2 Connector Send config"
+                       doc:id="cfd4538b-44e9-46d7-b358-7b00e2696a1a">
+    <as2-mule4:connection partnerURL="${partner-as2.request.partner.url}"
+                          connectionIdleTimeoutUnits="NANOSECONDS"
+                          connectionTimeout="${partner-as2.request.timeout}"
+                          connectionIdleTimeout="${partner-as2.request.idealtimeout}">
+        </as2-mule4:connection>
+    <as2-mule4:self-config as2Name="${partner-as2.request.self.name}"
+                           x509Alias="${partner-as2.request.self.alias}"
+                           email="${partner-as2.request.self.email}"/>
+    <as2-mule4:partner-config as2Name="${partner-as2.request.partner.name}"
+                              x509Alias="${partner-as2.request.partner.alias}"
+                              email="${partner-as2.request.partner.email}"/>
+    <as2-mule4:requester-config encryptionAlgorithm="AES256_CBC"
+                                messageIntegrityCheckAlgorithm="SHA256"
+                                mdnMessageIntegrityCheckAlgorithm="SHA256"
+                                requestReceipt="SIGNED_OPTIONAL"/>
+    <as2-mule4:keystore-config keystorePassword="${partner-as2.request.self.keystore-password}"
+                               keystorePath="${partner-as2.request.self.path}"
+                               privateKeyPassword="${partner-as2.request.self.privatekey-password}"/>
+</as2-mule4:send-config>
+	<as2-mule4:listener-config
+        name="AS2_Connector_Listener_config_self"
+        doc:name="AS2 Connector Listener config self"
+        doc:id="e9ae7cf7-542e-4488-84d6-a23b7d03222f"
+        httpListenerConfig="HTTP_Listener_config_receive_file"
+        securityLevel="ENCRYPTED"
+    >
+        <as2-mule4:self-config
+            as2Name="${as2.request.self.name}"
+            x509Alias="${as2.request.self.alias}"
+            email="${as2.request.self.email}" />
+        <as2-mule4:partner-config
+            as2Name="${as2.request.partner.name}"
+            x509Alias="${as2.request.partner.alias}"
+            email="${as2.request.partner.email}" />
+        <as2-mule4:check-for-duplicate-messages
+            objectStore="Object_store" />
+        <as2-mule4:key-store-config
+            keystorePassword="${as2.request.self.keystore-password}"
+            keystorePath="${as2.request.self.path}"
+            privateKeyPassword="${as2.request.self.privatekey-password}" />
+    </as2-mule4:listener-config>
+	<os:object-store
+		name="Object_store"
+		doc:name="Object store"
+		doc:id="8fae4684-d965-4bff-8df0-d15cc2a5198a"
+		entryTtl="30"
+		expirationInterval="30" />
+	<file:config
+		name="File_Config"
+		doc:name="File Config"
+		doc:id="64732cfd-f043-45f9-ad08-ac4efb5c4244"
+	>
+		<file:connection workingDir="D:\Learning\Prowess\FTP">
+			<reconnection>
+				<reconnect blocking="false" />
+			</reconnection>
+		</file:connection>
+	</file:config>
+	<http:listener-config
+		name="HTTP_Listener_config_receive_file"
+		doc:name="HTTP Listener config"
+		doc:id="bc31475a-6fc5-46e0-810c-094af5d60827"
+	>
+		<http:listener-connection
+			host="0.0.0.0"
+			port="8082" >
+			<reconnection >
+				<reconnect blocking="false" />
+			</reconnection>
+		</http:listener-connection>
+	</http:listener-config>
+</mule>
